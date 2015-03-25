@@ -71,6 +71,8 @@ typedef struct {
   #else
     uint8_t prescaler;      // Without AMASS, a prescaler is required to adjust for slow timing.
   #endif
+  uint8_t spindle_speed_pwm; // RPM
+  uint8_t spindle_direction; // status of the spindle 
 } segment_t;
 static segment_t segment_buffer[SEGMENT_BUFFER_SIZE];
 
@@ -92,10 +94,11 @@ typedef struct {
     uint32_t steps[N_AXIS];
   #endif
 
-  uint16_t step_count;       // Steps remaining in line segment motion  
+  uint16_t step_count;       // Steps remaining in line segment motion   
   uint8_t exec_block_index; // Tracks the current st_block index. Change indicates new block.
   st_block_t *exec_block;   // Pointer to the block data for the segment being executed
   segment_t *exec_segment;  // Pointer to the segment being executed
+  bool set_rpm;
 } stepper_t;
 static stepper_t st;
 
@@ -282,10 +285,18 @@ ISR(TIMER1_COMPA_vect)
 {        
 // SPINDLE_ENABLE_PORT ^= 1<<SPINDLE_ENABLE_BIT; // Debug: Used to time ISR
   if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
-  
   // Set the direction pins a couple of nanoseconds before we step the steppers
   DIRECTION_PORT = (DIRECTION_PORT & ~DIRECTION_MASK) | (st.dir_outbits & DIRECTION_MASK);
 
+//LASER
+  if (st.set_rpm == true) {
+	OCR_REGISTER = st.exec_segment->spindle_speed_pwm;
+	st.set_rpm = false;
+	return; // I think this is needed to give the laser a good start, it takes time for the laser to change.
+  }
+    
+
+   
   // Then pulse the stepping pins
   #ifdef STEP_PULSE_DELAY
     st.step_bits = (STEP_PORT & ~STEP_MASK) | st.step_outbits; // Store out_bits to prevent overwriting.
@@ -301,19 +312,20 @@ ISR(TIMER1_COMPA_vect)
   busy = true;
   sei(); // Re-enable interrupts to allow Stepper Port Reset Interrupt to fire on-time. 
          // NOTE: The remaining code in this ISR will finish before returning to main program.
-    
+  
   // If there is no step segment, attempt to pop one from the stepper buffer
   if (st.exec_segment == NULL) {
     // Anything in the buffer? If so, load and initialize next step segment.
     if (segment_buffer_head != segment_buffer_tail) {
       // Initialize new step segment and load number of steps to execute
       st.exec_segment = &segment_buffer[segment_buffer_tail];
-
+      if(st.exec_segment != NULL && bit_istrue(settings.flags,BITFLAG_LASER) && (st.exec_segment->spindle_direction != SPINDLE_DISABLE) && (OCR_REGISTER != st.exec_segment->spindle_speed_pwm)) {
+        st.set_rpm = true;
+      }
       #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
         // With AMASS is disabled, set timer prescaler for segments with slow step frequencies (< 250Hz).
         TCCR1B = (TCCR1B & ~(0x07<<CS10)) | (st.exec_segment->prescaler<<CS10);
       #endif
-
       // Initialize step segment timing per step and load number of steps to execute.
       OCR1A = st.exec_segment->cycles_per_tick;
       st.step_count = st.exec_segment->n_step; // NOTE: Can sometimes be zero when moving slow.
@@ -345,7 +357,6 @@ ISR(TIMER1_COMPA_vect)
       return; // Nothing to do but exit.
     }  
   }
-  
   
   // Check probing state.
   probe_state_monitor();
@@ -645,6 +656,9 @@ void st_prep_buffer()
 
     // Set new segment to point to the current segment data block.
     prep_segment->st_block_index = prep.st_block_index;
+//LASER TEST
+	prep_segment->spindle_direction = pl_block->spindle_direction;
+    prep_segment->spindle_speed_pwm = calculate_pwm_from_rpm(pl_block->spindle_speed);
 
     /*------------------------------------------------------------------------------------
         Compute the average velocity of this new segment by determining the total distance
@@ -803,8 +817,7 @@ void st_prep_buffer()
           prep_segment->cycles_per_tick = 0xffff;
         }
       }
-    #endif
-
+    #endif          
     // Segment complete! Increment segment buffer indices.
     segment_buffer_head = segment_next_head;
     if ( ++segment_next_head == SEGMENT_BUFFER_SIZE ) { segment_next_head = 0; }

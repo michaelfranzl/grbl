@@ -19,6 +19,13 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* 
+  This file is based on work from Grbl v0.8, distributed under the 
+  terms of the MIT-license. See COPYING for more details.  
+    Copyright (c) 2009-2011 Simen Svale Skogsrud
+    Copyright (c) 2012 Sungeun K. Jeon
+*/ 
+
 #include "grbl.h"
 
 
@@ -51,7 +58,47 @@ void spindle_stop()
   #endif  
 }
 
+void spindle_set_direction(uint8_t direction)
+{
+	if (direction != SPINDLE_DISABLE){
+		if (direction == SPINDLE_ENABLE_CW) {
+		  SPINDLE_DIRECTION_PORT &= ~(1<<SPINDLE_DIRECTION_BIT);
+		} else {
+		  SPINDLE_DIRECTION_PORT |= (1<<SPINDLE_DIRECTION_BIT);
+		}
+	}
+}
 
+#ifdef VARIABLE_SPINDLE
+  void spindle_start()
+  {
+    // TODO: Install the optional capability for frequency-based output for servos.
+    TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
+    TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // set to 1/8 Prescaler
+  }
+
+  void spindle_rpm_update(uint8_t pwm)
+  {
+    // TODO: Install the optional capability for frequency-based output for servos.
+    OCR_REGISTER = pwm;
+  }
+
+  uint8_t calculate_pwm_from_rpm(float rpm)
+  {
+     // TODO: Install the optional capability for frequency-based output for servos.
+     #define SPINDLE_RPM_RANGE (SPINDLE_MAX_RPM-SPINDLE_MIN_RPM)
+     rpm -= SPINDLE_MIN_RPM;
+     if ( rpm > SPINDLE_RPM_RANGE ) { rpm = SPINDLE_RPM_RANGE; } // Prevent uint8 overflow
+     return (uint8_t) floor( rpm*(255.0/SPINDLE_RPM_RANGE) + 0.5);
+  }
+#endif
+
+void spindle_run(uint8_t state, float rpm)
+{
+  if (sys.state == STATE_CHECK_MODE) { return; }
+  protocol_buffer_synchronize(); // Empty planner buffer to ensure spindle is set when programmed.  
+  spindle_set_state(state, rpm);
+}
 void spindle_set_state(uint8_t state, float rpm)
 {
   // Halt or set spindle direction and rpm. 
@@ -100,12 +147,4 @@ void spindle_set_state(uint8_t state, float rpm)
     #endif
 
   }
-}
-
-
-void spindle_run(uint8_t state, float rpm)
-{
-  if (sys.state == STATE_CHECK_MODE) { return; }
-  protocol_buffer_synchronize(); // Empty planner buffer to ensure spindle is set when programmed.  
-  spindle_set_state(state, rpm);
 }
