@@ -240,7 +240,7 @@
 
 // This need variable spinle enabaled. Lasers don't need time to speed up or slow down and the build 
 // in dwelling for spindels will be disabled. 
-//#define LASER_SPINDLE // Default disabled. Uncomment to enable.
+#define LASER_SPINDLE // Default disabled. Uncomment to enable.
 
 // Used by the variable spindle output only. These parameters set the maximum and minimum spindle speed
 // "S" g-code values to correspond to the maximum and minimum pin voltages. There are 256 discrete and 
