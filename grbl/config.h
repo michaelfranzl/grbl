@@ -157,6 +157,13 @@
 // NOTE: Will eventually be added to Grbl settings in v1.0.
 // #define INVERT_CONTROL_PIN // Default disabled. Uncomment to enable.
 
+// Inverts the spindle enable pin from low-disabled/high-enabled to low-enabled/high-disabled. Useful
+// for some pre-built electronic boards.
+// NOTE: If VARIABLE_SPINDLE is enabled(default), this option has no effect as the PWM output and 
+// spindle enable are combined to one pin. If you need both this option and spindle speed PWM, 
+// uncomment the config option USE_SPINDLE_DIR_AS_ENABLE_PIN below.
+// #define INVERT_SPINDLE_ENABLE_PIN // Default disabled. Uncomment to enable.
+
 // Enable limit pin states feedback in status reports. The data is presented as 0 (low) or 1(high), 
 // where the order is XYZ. For example, if the Y- and Z-limit pins are active, Grbl will include the 
 // following string in the status report "Lim:011". This is generally useful for setting up a new
@@ -256,6 +263,22 @@
 // spindle RPM output lower than this value will be set to this value.
 // #define MINIMUM_SPINDLE_PWM 5 // Default disabled. Uncomment to enable. Integer (0-255)
 
+// By default on a 328p(Uno), Grbl combines the variable spindle PWM and the enable into one pin to help 
+// preserve I/O pins. For certain setups, these may need to be separate pins. This configure option uses
+// the spindle direction pin(D13) as a separate spindle enable pin along with spindle speed PWM on pin D11. 
+// NOTE: This configure option only works with VARIABLE_SPINDLE enabled and a 328p processor (Uno). 
+// NOTE: With no direction pin, the spindle clockwise M4 g-code command will be removed. M3 and M5 still work.
+// #define USE_SPINDLE_DIR_AS_ENABLE_PIN // Default disabled. Uncomment to enable.
+
+// With this enabled, Grbl sends back an echo of the line it has received, which has been pre-parsed (spaces
+// removed, capitalized letters, no comments) and is to be immediately executed by Grbl. Echoes will not be 
+// sent upon a line buffer overflow, but should for all normal lines sent to Grbl. For example, if a user 
+// sendss the line 'g1 x1.032 y2.45 (test comment)', Grbl will echo back in the form '[echo: G1X1.032Y2.45]'.
+// NOTE: Only use this for debugging purposes!! When echoing, this takes up valuable resources and can effect
+// performance. If absolutely needed for normal operation, the serial write buffer should be greatly increased
+// to help minimize transmission waiting within the serial write protocol.
+// #define REPORT_ECHO_LINE_RECEIVED // Default disabled. Uncomment to enable.
+
 // Minimum planner junction speed. Sets the default minimum junction speed the planner plans to at
 // every buffer block junction, except for starting from rest and end of the buffer, which are always
 // zero. This value controls how fast the machine moves through junctions with no regard for acceleration
@@ -266,7 +289,8 @@
 
 // Sets the minimum feed rate the planner will allow. Any value below it will be set to this minimum
 // value. This also ensures that a planned motion always completes and accounts for any floating-point
-// round-off errors. A lower value than 1.0 mm/min may work in some cases, but we don't recommend it.
+// round-off errors. Although not recommended, a lower value than 1.0 mm/min will likely work in smaller
+// machines, perhaps to 0.1mm/min, but your success may vary based on multiple factors.
 #define MINIMUM_FEED_RATE 1.0 // (mm/min)
 
 // Number of arc generation iterations by small angle approximation before exact arc trajectory 
@@ -274,6 +298,16 @@
 // are issues with the accuracy of the arc generations, or increased if arc execution is getting
 // bogged down by too many trig calculations. 
 #define N_ARC_CORRECTION 12 // Integer (1-255)
+
+// The arc G2/3 g-code standard is problematic by definition. Radius-based arcs have horrible numerical 
+// errors when arc at semi-circles(pi) or full-circles(2*pi). Offset-based arcs are much more accurate 
+// but still have a problem when arcs are full-circles (2*pi). This define accounts for the floating 
+// point issues when offset-based arcs are commanded as full circles, but get interpreted as extremely
+// small arcs with around machine epsilon (1.2e-7rad) due to numerical round-off and precision issues.
+// This define value sets the machine epsilon cutoff to determine if the arc is a full-circle or not.
+// NOTE: Be very careful when adjusting this value. It should always be greater than 1.2e-7 but not too
+// much greater than this. The default setting should capture most, if not all, full arc error situations.
+#define ARC_ANGULAR_TRAVEL_EPSILON 5E-7 // Float (radians)
 
 // Time delay increments performed during a dwell. The default value is set at 50ms, which provides
 // a maximum time delay of roughly 55 minutes, more than enough for most any application. Increasing
@@ -350,22 +384,28 @@
 // Force Grbl to check the state of the hard limit switches when the processor detects a pin
 // change inside the hard limit ISR routine. By default, Grbl will trigger the hard limits
 // alarm upon any pin change, since bouncing switches can cause a state check like this to 
-// misread the pin. When hard limits are triggers, this should be 100% reliable, which is the
+// misread the pin. When hard limits are triggered, they should be 100% reliable, which is the
 // reason that this option is disabled by default. Only if your system/electronics can guarantee
-// the pins don't bounce, we recommend enabling this option. If so, this will help prevent
+// that the switches don't bounce, we recommend enabling this option. This will help prevent
 // triggering a hard limit when the machine disengages from the switch.
 // NOTE: This option has no effect if SOFTWARE_DEBOUNCE is enabled.
 // #define HARD_LIMIT_FORCE_STATE_CHECK // Default disabled. Uncomment to enable.
 
 
 // ---------------------------------------------------------------------------------------
-
-// TODO: Install compile-time option to send numeric status codes rather than strings.
-
-// ---------------------------------------------------------------------------------------
 // COMPILE-TIME ERROR CHECKING OF DEFINE VALUES:
 
+#ifndef HOMING_CYCLE_0
+  #error "Required HOMING_CYCLE_0 not defined."
+#endif
 
+#if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN) && !defined(VARIABLE_SPINDLE)
+  #error "USE_SPINDLE_DIR_AS_ENABLE_PIN may only be used with VARIABLE_SPINDLE enabled"
+#endif
+
+#if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN) && !defined(CPU_MAP_ATMEGA328P)
+  #error "USE_SPINDLE_DIR_AS_ENABLE_PIN may only be used with a 328p processor"
+#endif
 
 // ---------------------------------------------------------------------------------------
 
