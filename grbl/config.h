@@ -80,7 +80,7 @@
 // Number of homing cycles performed after when the machine initially jogs to limit switches.
 // This help in preventing overshoot and should improve repeatability. This value should be one or 
 // greater.
-#define N_HOMING_LOCATE_CYCLE 2 // Integer (1-128)
+#define N_HOMING_LOCATE_CYCLE 1 // Integer (1-128)
 
 // After homing, Grbl will set by default the entire machine space into negative space, as is typical
 // for professional CNC machines, regardless of where the limit switches are located. Uncomment this 
@@ -163,13 +163,6 @@
 // spindle enable are combined to one pin. If you need both this option and spindle speed PWM, 
 // uncomment the config option USE_SPINDLE_DIR_AS_ENABLE_PIN below.
 // #define INVERT_SPINDLE_ENABLE_PIN // Default disabled. Uncomment to enable.
-
-// Enable limit pin states feedback in status reports. The data is presented as 0 (low) or 1(high), 
-// where the order is XYZ. For example, if the Y- and Z-limit pins are active, Grbl will include the 
-// following string in the status report "Lim:011". This is generally useful for setting up a new
-// CNC machine, but we do not recommend keeping this option enabled, as it will consume CPU resources
-// with little to no benefit during normal operation and it may not be supported by most GUIs.
-// #define REPORT_LIMIT_PIN_STATE // Default disabled. Uncomment to enable.
 
 // Enable control pin states feedback in status reports. The data is presented as simple binary of
 // the control pin port (0 (low) or 1(high)), masked to show only the input pins. Non-control pins on the 
