@@ -991,23 +991,23 @@ uint8_t gc_execute_line(char *line)
         case MOTION_MODE_CW_ARC: 
           #ifdef USE_LINE_NUMBERS
             mc_arc(gc_state.position, gc_block.values.xyz, gc_block.values.ijk, gc_block.values.r, 
-              gc_state.feed_rate, gc_state.modal.feed_rate, axis_0, axis_1, axis_linear, 
+              gc_state.feed_rate, gc_state.modal.feed_rate, axis_0, axis_1, axis_linear, true,
               gc_state.spindle_speed, gc_state.modal.spindle, gc_block.values.n);  
           #else
             mc_arc(gc_state.position, gc_block.values.xyz, gc_block.values.ijk, gc_block.values.r, 
               gc_state.feed_rate, gc_state.modal.feed_rate, axis_0, axis_1, axis_linear, true,
-			  gc_state.spindle_speed, gc_state.modal.spindle);  
+              gc_state.spindle_speed, gc_state.modal.spindle);  
           #endif
           break;        
         case MOTION_MODE_CCW_ARC:
           #ifdef USE_LINE_NUMBERS
             mc_arc(gc_state.position, gc_block.values.xyz, gc_block.values.ijk, gc_block.values.r, 
-              gc_state.feed_rate, gc_state.modal.feed_rate, axis_0, axis_1, axis_linear, false, gc_state.line_number,
-              gc_state.spindle_speed, gc_state.modal.spindle);   
+              gc_state.feed_rate, gc_state.modal.feed_rate, axis_0, axis_1, axis_linear, false,
+              gc_state.spindle_speed, gc_state.modal.spindle, gc_block.values.n);
           #else
             mc_arc(gc_state.position, gc_block.values.xyz, gc_block.values.ijk, gc_block.values.r, 
               gc_state.feed_rate, gc_state.modal.feed_rate, axis_0, axis_1, axis_linear, false,
-			  gc_state.spindle_speed, gc_state.modal.spindle);  
+              gc_state.spindle_speed, gc_state.modal.spindle);  
           #endif
           break;
         case MOTION_MODE_PROBE_TOWARD: 
