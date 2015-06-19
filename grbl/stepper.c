@@ -94,7 +94,7 @@ typedef struct {
     uint32_t steps[N_AXIS];
   #endif
 
-  uint16_t step_count;       // Steps remaining in line segment motion   
+  uint16_t step_count;       // Steps remaining in line segment motion
   uint8_t exec_block_index; // Tracks the current st_block index. Change indicates new block.
   st_block_t *exec_block;   // Pointer to the block data for the segment being executed
   segment_t *exec_segment;  // Pointer to the segment being executed
@@ -814,7 +814,8 @@ void st_prep_buffer()
           prep_segment->cycles_per_tick = 0xffff;
         }
       }
-    #endif          
+      
+    #endif
     // Segment complete! Increment segment buffer indices.
     segment_buffer_head = segment_next_head;
     if ( ++segment_next_head == SEGMENT_BUFFER_SIZE ) { segment_next_head = 0; }
