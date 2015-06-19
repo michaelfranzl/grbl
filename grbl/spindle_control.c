@@ -102,7 +102,7 @@ void spindle_set_state(uint8_t state, float rpm)
         uint16_t current_pwm;
       #else
         TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
-        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // set to 1/8 Prescaler
+        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // 0x02 = 1/8 Prescaler, 0x01 = no prescaler; 5th bit turned on = Toggle OC2A on Compare Match
         uint8_t current_pwm;
       #endif
 

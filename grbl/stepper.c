@@ -292,7 +292,6 @@ ISR(TIMER1_COMPA_vect)
   if (st.set_rpm == true) {
 	OCR_REGISTER = st.exec_segment->spindle_speed_pwm;
 	st.set_rpm = false;
-	return; // I think this is needed to give the laser a good start, it takes time for the laser to change.
   }
     
 
