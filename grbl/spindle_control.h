@@ -27,9 +27,9 @@
 void spindle_init();
 
 // Sets spindle direction and spindle rpm via PWM, if enabled.
-void spindle_run(uint8_t direction, float rpm);
+void spindle_run(uint8_t direction, uint8_t rpm);
 
-void spindle_set_state(uint8_t state, float rpm);
+void spindle_set_state(uint8_t state, uint8_t rpm);
 
 // Kills spindle.
 void spindle_stop();

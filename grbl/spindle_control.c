@@ -71,7 +71,7 @@ void spindle_stop()
   #endif  
 }
 
-void spindle_set_state(uint8_t state, float rpm)
+void spindle_set_state(uint8_t state, uint8_t rpm)
 {
   // Halt or set spindle direction and rpm. 
   if (state == SPINDLE_DISABLE) {
@@ -123,7 +123,7 @@ void spindle_set_state(uint8_t state, float rpm)
 }
 
 
-void spindle_run(uint8_t state, float rpm)
+void spindle_run(uint8_t state, uint8_t rpm)
 {
   if (sys.state == STATE_CHECK_MODE) { return; }
   protocol_buffer_synchronize(); // Empty planner buffer to ensure spindle is set when programmed.  

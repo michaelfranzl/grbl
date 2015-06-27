@@ -849,17 +849,16 @@ uint8_t gc_execute_line(char *line)
 
   // [4. Set spindle speed ]:
   if (gc_state.spindle_speed != gc_block.values.s) { 
-    gc_state.spindle_speed = gc_block.values.s; 
-    //S value changes needs to work without planer block too. If there is motion
-    //it will update in real time. However if there is not we need to take care.
-    // This statment tells that the block has no motion:
-    // !((gc_state.modal.motion != MOTION_MODE_NONE)&&(axis_command == AXIS_COMMAND_MOTION_MODE))
-    // This if only calls spindle run when LASER SPINDLE and LASER mode ON and block has no motion: 
+    gc_state.spindle_speed = gc_block.values.s;
     #ifdef LASER_SPINDLE
-	  if (bit_isfalse(settings.flags,BITFLAG_LASER)|| !((gc_state.modal.motion != MOTION_MODE_NONE)&&(axis_command == AXIS_COMMAND_MOTION_MODE)))
-    #endif 
-    // Update running spindle only if not in check mode and not already enabled.
-    if (gc_state.modal.spindle != SPINDLE_DISABLE) { spindle_run(gc_state.modal.spindle, gc_block.values.s); }
+      if (bit_isfalse(settings.flags,BITFLAG_LASER) || !((gc_state.modal.motion != MOTION_MODE_NONE)&&(axis_command == AXIS_COMMAND_MOTION_MODE))) {
+        // If there is no motion either as G mode or as axis command, set PWM directly here. Otherwise, the ISR in stepper.c will set the PWM.
+        OCR_REGISTER = gc_block.values.s;
+      }
+    #else
+      // Update running spindle only if not in check mode and not already enabled.
+      if (gc_state.modal.spindle != SPINDLE_DISABLE) { spindle_run(gc_state.modal.spindle, gc_block.values.s); }
+    #endif
     gc_state.spindle_speed = gc_block.values.s; 
   }
     
@@ -871,11 +870,6 @@ uint8_t gc_execute_line(char *line)
   // [7. Spindle control ]:
   if (gc_state.modal.spindle != gc_block.modal.spindle) {
     gc_state.modal.spindle = gc_block.modal.spindle;    
-    //M3, M4 and M5 command needs to work without planer block too. If there is motion
-    //it will updated in real time. However if there is not we need to take care.
-    #ifdef LASER_SPINDLE
-      //if (bit_isfalse(settings.flags,BITFLAG_LASER) || !((gc_state.modal.motion != MOTION_MODE_NONE)&&(axis_command == AXIS_COMMAND_MOTION_MODE)))
-    #endif 
     // Update spindle control and apply spindle speed when enabling it in this block.    
     spindle_run(gc_block.modal.spindle, gc_state.spindle_speed);
     gc_state.modal.spindle = gc_block.modal.spindle;    
