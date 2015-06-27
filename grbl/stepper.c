@@ -288,13 +288,8 @@ ISR(TIMER1_COMPA_vect)
   // Set the direction pins a couple of nanoseconds before we step the steppers
   DIRECTION_PORT = (DIRECTION_PORT & ~DIRECTION_MASK) | (st.dir_outbits & DIRECTION_MASK);
 
-//LASER
-  if (st.set_rpm == true) {
-	OCR_REGISTER = st.exec_segment->spindle_speed_pwm;
-	st.set_rpm = false;
-  }
-    
-
+  // REALTIME PWM UPDATE
+  OCR_REGISTER = st.exec_segment->spindle_speed_pwm; // This can be done frequently without harm because OCR2x registers are double buffered (synchronized with either TOP or BOTTOM). See p. 145 of ATmega user manual.
    
   // Then pulse the stepping pins
   #ifdef STEP_PULSE_DELAY
@@ -318,9 +313,6 @@ ISR(TIMER1_COMPA_vect)
     if (segment_buffer_head != segment_buffer_tail) {
       // Initialize new step segment and load number of steps to execute
       st.exec_segment = &segment_buffer[segment_buffer_tail];
-      if(st.exec_segment != NULL && bit_istrue(settings.flags,BITFLAG_LASER) && (st.exec_segment->spindle_direction != SPINDLE_DISABLE) && (OCR_REGISTER != st.exec_segment->spindle_speed_pwm)) {
-        st.set_rpm = true;
-      }
       #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
         // With AMASS is disabled, set timer prescaler for segments with slow step frequencies (< 250Hz).
         TCCR1B = (TCCR1B & ~(0x07<<CS10)) | (st.exec_segment->prescaler<<CS10);
@@ -652,7 +644,6 @@ void st_prep_buffer()
 
     // Set new segment to point to the current segment data block.
     prep_segment->st_block_index = prep.st_block_index;
-//LASER TEST
     prep_segment->spindle_direction = pl_block->spindle_direction;
     prep_segment->spindle_speed_pwm = pl_block->spindle_speed;
 
