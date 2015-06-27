@@ -71,18 +71,6 @@ void spindle_stop()
   #endif  
 }
 
-#ifdef VARIABLE_SPINDLE
-  uint8_t calculate_pwm_from_rpm(float rpm)
-  {
-     // TODO: Install the optional capability for frequency-based output for servos.
-     #define SPINDLE_RPM_RANGE (SPINDLE_MAX_RPM-SPINDLE_MIN_RPM)
-     rpm -= SPINDLE_MIN_RPM;
-     if ( rpm > SPINDLE_RPM_RANGE ) { rpm = SPINDLE_RPM_RANGE; } // Prevent uint8 overflow
-     return (uint8_t) floor( rpm*(255.0/SPINDLE_RPM_RANGE) + 0.5);
-  }
-#endif
-
-
 void spindle_set_state(uint8_t state, float rpm)
 {
   // Halt or set spindle direction and rpm. 

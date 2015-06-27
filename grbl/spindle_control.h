@@ -34,10 +34,4 @@ void spindle_set_state(uint8_t state, float rpm);
 // Kills spindle.
 void spindle_stop();
 
-#ifdef VARIABLE_SPINDLE
-  // calaculates the RPM for the spindle, takes the value 
-  // from S gcode and calculates the PWM duty cycle
-  uint8_t calculate_pwm_from_rpm(float rpm);
-#endif
-
 #endif

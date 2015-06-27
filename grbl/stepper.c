@@ -653,8 +653,8 @@ void st_prep_buffer()
     // Set new segment to point to the current segment data block.
     prep_segment->st_block_index = prep.st_block_index;
 //LASER TEST
-	prep_segment->spindle_direction = pl_block->spindle_direction;
-    prep_segment->spindle_speed_pwm = calculate_pwm_from_rpm(pl_block->spindle_speed);
+    prep_segment->spindle_direction = pl_block->spindle_direction;
+    prep_segment->spindle_speed_pwm = pl_block->spindle_speed;
 
     /*------------------------------------------------------------------------------------
         Compute the average velocity of this new segment by determining the total distance
