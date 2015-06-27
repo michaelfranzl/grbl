@@ -30,8 +30,15 @@ void spindle_init()
     SPINDLE_PWM_DDR |= (1<<SPINDLE_PWM_BIT); // Configure as PWM output pin.
     #if defined(CPU_MAP_ATMEGA2560) || defined(USE_SPINDLE_DIR_AS_ENABLE_PIN)
       SPINDLE_ENABLE_DDR |= (1<<SPINDLE_ENABLE_BIT); // Configure as output pin.
-    #endif     
-  // Configure no variable spindle and only enable pin.
+    #endif
+    #ifdef CPU_MAP_ATMEGA2560
+      TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
+      TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02 | (1<<WAVE2_REGISTER) | (1<<WAVE3_REGISTER); // set to 1/8 Prescaler
+      OCR4A = 0xFFFF; // set the top 16bit value
+    #else
+      TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
+      TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // 0x02 = 1/8 Prescaler, 0x01 = no prescaler; 5th bit turned on = Toggle OC2A on Compare Match
+    #endif
   #else  
     SPINDLE_ENABLE_DDR |= (1<<SPINDLE_ENABLE_BIT); // Configure as output pin.
   #endif
@@ -94,18 +101,7 @@ void spindle_set_state(uint8_t state, float rpm)
     #endif
 
     #ifdef VARIABLE_SPINDLE
-      // TODO: Install the optional capability for frequency-based output for servos.
-      #ifdef CPU_MAP_ATMEGA2560
-      	TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
-        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02 | (1<<WAVE2_REGISTER) | (1<<WAVE3_REGISTER); // set to 1/8 Prescaler
-        OCR4A = 0xFFFF; // set the top 16bit value
-        uint16_t current_pwm;
-      #else
-        TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
-        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // 0x02 = 1/8 Prescaler, 0x01 = no prescaler; 5th bit turned on = Toggle OC2A on Compare Match
-        uint8_t current_pwm;
-      #endif
-
+      uint16_t current_pwm;
       #define SPINDLE_RPM_RANGE (SPINDLE_MAX_RPM-SPINDLE_MIN_RPM)
       if ( rpm < SPINDLE_MIN_RPM ) { rpm = 0; } 
       else { 
