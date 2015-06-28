@@ -849,16 +849,18 @@ uint8_t gc_execute_line(char *line)
 
   // [4. Set spindle speed ]:
   if (gc_state.spindle_speed != gc_block.values.s) { 
-    gc_state.spindle_speed = gc_block.values.s; 
+    gc_state.spindle_speed = gc_block.values.s;
     #ifdef LASER_SPINDLE
-      if (bit_isfalse(settings.flags,BITFLAG_LASER)|| !((gc_state.modal.motion != MOTION_MODE_NONE)&&(axis_command == AXIS_COMMAND_MOTION_MODE))) {
-        // If there is no motion either as G mode or as axis command, set PWM directly here. Otherwise, the ISR in stepper.c will set the PWM.
-        OCR_REGISTER = calculate_pwm_from_rpm(gc_block.values.s);
-      }
-    #else
-      // Update running spindle only if not in check mode and not already enabled.
-      if (gc_state.modal.spindle != SPINDLE_DISABLE) { spindle_run(gc_state.modal.spindle, gc_block.values.s); }
+      if (!((gc_state.modal.motion != MOTION_MODE_NONE)&&(axis_command == AXIS_COMMAND_MOTION_MODE)))
+      // In the current Gcode line, there NO motion (contains neither G mode nor axis command).
+      // So, it is OK to call spindle_run below which is synchronizing and blocking for a bit.
+      // However, for fast laser PWM, this is undesirable. Therefore, for fast PWM, 
+      // always send Gcode which contains motion together with an S setting in one single line,
+      // in which case we do nothing here and the PWM will be set in realtime by the ISR in stepper.c
     #endif
+    // Update running spindle only if not in check mode and not already enabled.
+    if (gc_state.modal.spindle != SPINDLE_DISABLE) { spindle_run(gc_state.modal.spindle, gc_block.values.s); }
+    
     gc_state.spindle_speed = gc_block.values.s; 
   }
     
