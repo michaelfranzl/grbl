@@ -154,8 +154,9 @@
 
 // Inverts pin logic of the control command pins. This essentially means when this option is enabled
 // you can use normally-closed switches, rather than the default normally-open switches.
-// NOTE: Will eventually be added to Grbl settings in v1.0.
-// #define INVERT_CONTROL_PIN // Default disabled. Uncomment to enable.
+// NOTE: If you require individual control pins inverted, keep this macro disabled and simply alter
+//   the CONTROL_INVERT_MASK definition in cpu_map.h files.
+// #define INVERT_ALL_CONTROL_PINS // Default disabled. Uncomment to enable.
 
 // Inverts the spindle enable pin from low-disabled/high-enabled to low-enabled/high-disabled. Useful
 // for some pre-built electronic boards.
@@ -260,6 +261,9 @@
 // the spindle direction pin(D13) as a separate spindle enable pin along with spindle speed PWM on pin D11. 
 // NOTE: This configure option only works with VARIABLE_SPINDLE enabled and a 328p processor (Uno). 
 // NOTE: With no direction pin, the spindle clockwise M4 g-code command will be removed. M3 and M5 still work.
+// NOTE: BEWARE! The Arduino bootloader toggles the D13 pin when it powers up. If you flash Grbl with
+// a programmer (you can use a spare Arduino as "Arduino as ISP". Search the web on how to wire this.), 
+// this D13 LED toggling should go away. We haven't tested this though. Please report how it goes!
 // #define USE_SPINDLE_DIR_AS_ENABLE_PIN // Default disabled. Uncomment to enable.
 
 // With this enabled, Grbl sends back an echo of the line it has received, which has been pre-parsed (spaces
