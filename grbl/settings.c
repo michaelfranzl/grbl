@@ -266,6 +266,12 @@ uint8_t settings_store_global_setting(uint8_t parameter, float value) {
       case 25: settings.homing_seek_rate = value; break;
       case 26: settings.homing_debounce_delay = int_value; break;
       case 27: settings.homing_pulloff = value; break;
+#ifdef LASER_SPINDLE
+      case 40: 
+        if (int_value) { settings.flags |= BITFLAG_LASER; }
+        else { settings.flags &= ~BITFLAG_LASER; }
+        break;
+#endif
       default: 
         return(STATUS_INVALID_STATEMENT);
     }

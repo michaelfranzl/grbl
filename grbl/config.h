@@ -239,7 +239,7 @@
 // The hardware PWM output on pin D11 is required for variable spindle output voltages.
 #define VARIABLE_SPINDLE // Default enabled. Comment to disable.
 
-// Enable this if you want Grbl to control a laser diode controlled by realtime PWM (PWM synchronized with Gcode commands). If this is not enabled, changing the spindle speed via S commands will dwell for a certain amount of time, which is not necessary and undesired when driving a laser. If you enable this, you also need to enable VARIABLE_SPINDLE.
+// Enable this if you want Grbl to control a laser diode controlled by realtime PWM (PWM synchronized with Gcode commands). If this is not enabled, changing the spindle speed via S commands will dwell for a certain amount of time, which is not necessary and undesired when driving a laser. If you enable this, you also need to enable VARIABLE_SPINDLE. Credit for this great modification of upstream grbl goes to Markus Schulz (alpharesearch) and Michael Franzl for minor improvements
 #define LASER_SPINDLE // Default disabled. Uncomment to enable.
 
 // Used by the variable spindle output only. These parameters set the maximum and minimum spindle speed
