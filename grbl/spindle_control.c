@@ -192,7 +192,7 @@ void spindle_set_state(uint8_t state, float rpm)
          * 
          *     max_mm_per_min_on_wood = 4000
          * 
-         * we get the smallest drawn subsampling line, for 1/64 prescaler:
+         * we get the longest drawn subsampling line, for 1/64 prescaler:
          * 
          *     pwm_subsampling_line = 4000 / 60 * 1.024ms = 68µm
          * 
