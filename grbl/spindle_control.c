@@ -102,7 +102,105 @@ void spindle_set_state(uint8_t state, float rpm)
         uint16_t current_pwm;
       #else
         TCCRA_REGISTER = (1<<COMB_BIT) | (1<<WAVE1_REGISTER) | (1<<WAVE0_REGISTER);
-        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // 0x02 = 1/8 Prescaler, 0x01 = no prescaler; 5th bit turned on = Toggle OC2A on Compare Match
+        
+        /* Comments by Michael Franzl for grbl's laser modification.
+         * 
+         * Calculating the highest prescaler value possible that still is
+         * suitable for 256-bit grayscale laser engraving. Having the lowest
+         * possible PWM base frequency may help to use cheaper laser dirver
+         * circuits, and might be more 'easy' on the laser diode itself.
+         * 
+         * Laser engraving info is sent as tiny line fragments.
+         * The maximum throughput speed of those line fragments is
+         * limited at least by 2 factors:
+         * 
+         *   1. grbl's algorothms
+         *   2. the serial connection
+         * 
+         * Assuming that grbl's algorithms are faster than the serial connection,
+         * the bottleneck limitation now becomes the serial port bandwidth.
+         * One "pixel" is defined by the minimum G-Code exchange with a
+         * string length of bytes_per_pixel = 15:
+         * 
+         *     X0000.0S000\nok\n
+         * 
+         * Having a CPU serial bit_rate=115200Hz, one can find the absolute maximum
+         * pixels that can be drawn per second (8 symbol bits + 1 stop bit):
+         * 
+         *     max_px_per_sec = floor(baud_rate / 9 / bytes_per_pixel) = 853
+         * 
+         * Or the inverse:
+         * 
+         *     min_time_per_px = 1.172ms
+         * 
+         * Assuming a rather fine resolution of 10 pixels per millimeter (254 dpi),
+         * 
+         *     mm_per_px = 0.1
+         * 
+         * we get a maximum possible feed rate of
+         * 
+         *     max_mm_per_sec = mm_per_px * max_px_per_sec = 85.3
+         * 
+         * Or in mm per minute:
+         * 
+         *     max_mm_per_min = 5118
+         * 
+         * In an idealistic case, one pixel should receive at least one
+         * black/white PWM cycle, but here we are even aiming for two per
+         * pixel for better black/white subsampling.
+         * 
+         * For needed_cycles_per_px = 2, we get
+         * 
+         *     pwm_time_per_px = min_time_per_px / needed_cycles_per_px = 586µs
+         * 
+         * Next, we calculate the period of the available PWM signals, 
+         * using User Manual ATmega p. 158. Calculations for Arduino Uno
+         * which has a 16MHz clock.
+         * 
+         * PWM_t is the period of the PWM signal
+         * PWM_f is the base frequency of the PWM signal
+         * 
+         * CS = 0x00 No clock source
+         * CS = 0x01 No prescaling, PWM_f = 16MHz/(1*256) = 62500 Hz; PWM_t = 16µs
+         * CS = 0x02 1/8 prescaler, PWM_f = 16MHz/(8*256) = 7812.5 Hz; PWM_T = 128µs
+         * CS = 0x03 1/32 prescaler, PWM_f = 16MHz/(32*256) = 1953.125 Hz; PWM_t = 512µs
+         * CS = 0x04 1/64 prescaler, PWM_f = 16MHz/(64*256) = 976.5625 Hz; PWM_t = 1.024ms
+         * 
+         * We find that a presaler of 1/32 will give us PWM_t = 512µs. So we get
+         * 
+         *     pwm_cycles_per_pixel = min_time_per_px / PWM_t = 2.28
+         * 
+         * Having 2.28 PWM cycles per pixel should guarantee that one pixel
+         * gets enough black/white subsampling. Assuming a 50% duty cycle
+         * of the PWM, the "line" that one PWM cycle draws on the workpiece is
+         * 
+         *     pwm_subsampling_line = mm_per_px / pwm_cycles_per_pixel / 2 = 22µm
+         * 
+         * Which is about 1/4 of the thickness of a human hair and certainly
+         * much smaller than the focal point of the laser of about 100µm.
+         * 
+         * Therefore, it is more than optimal to set 1/32 prescaler below.
+         * 
+         * Why the 1/64 prescaler still may be more than enough:
+         * 
+         * The above calculated max_mm_per_min = 5118 is a high feed rate,
+         * and the realistic value for grayscale engraving on wood
+         * lies closer to 4000 according to my tests. This means that
+         * even when sending long lines (eliminating the limitations of 
+         * grbl's processing speed and the serial port), the PWM subsampling
+         * length still lies below the focal circle of the laser. So, for
+         * 
+         *     max_mm_per_min_on_wood = 4000
+         * 
+         * we get the smallest drawn subsampling line, for 1/64 prescaler:
+         * 
+         *     pwm_subsampling_line = 4000 / 60 * 1.024ms = 68µm
+         * 
+         * 68µm is still well below the realistic laser focal point of
+         * ca. 100µm.
+         */
+        
+        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x04; // 1/64th prescaler; 5th bit turned on = Toggle OC2A on Compare Match
         uint8_t current_pwm;
       #endif
 
