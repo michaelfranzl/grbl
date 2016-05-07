@@ -178,7 +178,7 @@ void spindle_set_state(uint8_t state, float rpm)
          * Therefore, it is more than enough to set 1/64 prescaler below.
          */
         
-        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x03; // 1/64th prescaler; 5th bit turned on = Toggle OC2A on Compare Match
+        TCCRB_REGISTER = (TCCRB_REGISTER & 0b11111000) | 0x02; // 1/8 th prescaler
         uint8_t current_pwm;
       #endif
 

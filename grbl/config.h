@@ -35,7 +35,7 @@
 #define DEFAULTS_GENERIC
 
 // Serial baud rate
-#define BAUD_RATE 115200
+#define BAUD_RATE 230400
 
 // Default cpu mappings. Grbl officially supports the Arduino Uno only. Other processor types
 // may exist from user-supplied templates or directly user-defined in cpu_map.h
